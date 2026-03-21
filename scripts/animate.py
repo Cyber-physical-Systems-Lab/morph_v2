@@ -40,7 +40,7 @@ SCALES = {
 }
 
 SEED    = 42
-T       = 300
+T       = 800
 W_FLOOR = 0.25
 BG      = 'white'
 

@@ -4,17 +4,16 @@ generate_figures.py
 Generates publication figures from experiment_results.pkl.
 
 Figure 1  figures/scale_comparison.png
-  6-panel: delivery curves for each scale (2×2) + throughput retention vs N
-  + communication efficiency bar chart.
-  Shows MORPH v2 vs v1 vs Proximity vs TSG vs Full-Graph.
+  Delivery curves for each scale (2×2) + throughput retention vs N
+  + communication efficiency vs N.
 
-Figure 2  figures/ablation.png
-  4-panel bar chart: final deliveries per scale for all ablation conditions.
-  Clearly shows contribution of each mechanism.
+Figure 2  figures/scale_bars.png
+  Bar chart: final deliveries per condition across all 4 scales.
 
 Figure 3  figures/pareto.png
-  Pareto scatter: communication cost vs throughput for all conditions,
-  across all scales.
+  Pareto scatter: communication cost vs throughput, all 4 scales.
+
+Conditions shown: Proximity, TSG, MORPH, Full-Graph.
 
 Usage
 -----
@@ -33,7 +32,7 @@ RES_DIR = os.path.join(ROOT, 'results')
 FIG_DIR = os.path.join(ROOT, 'figures')
 os.makedirs(FIG_DIR, exist_ok=True)
 
-# ── Load ─────────────────────────────────────────────────────────────────────
+# ── Load ──────────────────────────────────────────────────────────────────────
 with open(os.path.join(RES_DIR, 'experiment_results.pkl'), 'rb') as f:
     data = pickle.load(f)
 
@@ -41,46 +40,39 @@ all_results = data['all_results']
 T           = data['T']
 SEEDS       = data['SEEDS']
 SCALES      = data['SCALES']
-CONDITIONS  = data['CONDITIONS']
 N_seeds     = len(SEEDS)
 
-# ── Visual style ─────────────────────────────────────────────────────────────
-BG = 'white'
-sm = lambda x, w=15: uniform_filter1d(x.astype(float), w)
+# ── Conditions to show ────────────────────────────────────────────────────────
+SHOW_CONDS = ['proximity', 'tsg', 'morph_v2', 'full']
 
 COLORS = {
-    'no_coord':            '#bbbbbb',
-    'proximity':           '#9467bd',
-    'tsg':                 '#d62728',
-    'morph_v1':            '#74add1',
-    'morph_v2_no_bcm':     '#f4a320',
-    'morph_v2_no_reward':  '#4dac26',
-    'morph_v2_no_neuro':   '#e08080',
-    'morph_v2':            '#2166ac',
-    'full':                '#555555',
+    'proximity': '#9467bd',
+    'tsg':       '#d62728',
+    'morph_v2':  '#2166ac',
+    'full':      '#555555',
 }
 LABELS = {
-    'no_coord':            'No-Coord',
-    'proximity':           'Proximity-r',
-    'tsg':                 'TSG',
-    'morph_v1':            'MORPH v1',
-    'morph_v2_no_bcm':     'v2 − BCM',
-    'morph_v2_no_reward':  'v2 − Reward',
-    'morph_v2_no_neuro':   'v2 − Neuromod',
-    'morph_v2':            'MORPH v2 (full)',
-    'full':                'Full-Graph',
+    'proximity': 'Proximity',
+    'tsg':       'TSG',
+    'morph_v2':  'MORPH',
+    'full':      'Full-Graph',
 }
 LINESTYLES = {
-    'no_coord':            ':',
-    'proximity':           '--',
-    'tsg':                 '-.',
-    'morph_v1':            '--',
-    'morph_v2_no_bcm':     '--',
-    'morph_v2_no_reward':  '--',
-    'morph_v2_no_neuro':   '--',
-    'morph_v2':            '-',
-    'full':                ':',
+    'proximity': '--',
+    'tsg':       '-.',
+    'morph_v2':  '-',
+    'full':      ':',
 }
+LINEWIDTHS = {
+    'proximity': 1.8,
+    'tsg':       1.8,
+    'morph_v2':  2.5,
+    'full':      1.5,
+}
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+BG = 'white'
+sm = lambda x, w=15: uniform_filter1d(x.astype(float), w)
 
 
 def agg(scale, cond, idx):
@@ -97,57 +89,56 @@ def mean_links(scale, cond):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# FIGURE 1: Scale comparison (delivery curves + summary panels)
+# FIGURE 1: Delivery curves + summary panels
 # ═══════════════════════════════════════════════════════════════════════════
 print("Generating Figure 1: Scale comparison ...")
-fig = plt.figure(figsize=(20, 14), facecolor=BG)
+fig = plt.figure(figsize=(18, 12), facecolor=BG)
 fig.patch.set_facecolor(BG)
-
-# 2×2 delivery curves (top 4 panels)
-curve_conds = ['no_coord', 'proximity', 'tsg', 'morph_v1', 'morph_v2', 'full']
 xs = np.arange(T)
 
+# 2×2 delivery curves (panels 1-4)
 for pi, (scale, env_id, N_exp) in enumerate(SCALES):
     ax = fig.add_subplot(3, 3, pi + 1)
     ax.set_facecolor(BG)
-    for sp in ['top', 'right']: ax.spines[sp].set_visible(False)
-    for cond in curve_conds:
+    for sp in ['top', 'right']:
+        ax.spines[sp].set_visible(False)
+
+    for cond in SHOW_CONDS:
         mn, sd = agg(scale, cond, 1)
-        lw = 2.5 if cond == 'morph_v2' else 1.5
-        zo = 4 if cond == 'morph_v2' else 2
-        ax.plot(xs, sm(mn), color=COLORS[cond], lw=lw,
-                linestyle=LINESTYLES[cond], label=LABELS[cond], zorder=zo)
+        ax.plot(xs, sm(mn), color=COLORS[cond], lw=LINEWIDTHS[cond],
+                linestyle=LINESTYLES[cond], label=LABELS[cond],
+                zorder=4 if cond == 'morph_v2' else 2)
         ax.fill_between(xs, sm(np.maximum(mn - sd, 0)), sm(mn + sd),
-                        alpha=0.10, color=COLORS[cond], zorder=zo - 1)
+                        alpha=0.12, color=COLORS[cond],
+                        zorder=3 if cond == 'morph_v2' else 1)
+
     fg_m = agg(scale, 'full', 1)[0][-1]
     v2_m = agg(scale, 'morph_v2', 1)[0][-1]
-    lk   = mean_links(scale, 'morph_v2')
-    ml   = N_exp * (N_exp - 1) // 2
+    pr_m = agg(scale, 'proximity', 1)[0][-1]
     ax.set_title(f'{scale.upper()}  N={N_exp}\n'
-                 f'MORPH v2: {v2_m:.1f} del  '
-                 f'({100*v2_m/max(fg_m,0.01):.0f}% FG)  '
-                 f'{lk:.0f}/{ml} links ({100*lk/ml:.0f}%)',
+                 f'MORPH {v2_m:.0f}  Proximity {pr_m:.0f}  '
+                 f'({100*v2_m/max(pr_m,0.01):.0f}% of Proximity)',
                  fontsize=9, fontweight='bold', loc='left')
     ax.set_xlabel('Time step', fontsize=9)
     ax.set_ylabel('Cumulative deliveries', fontsize=9)
     ax.set_xlim(0, T)
+    ax.yaxis.grid(True, alpha=0.3)
     if pi == 0:
-        ax.legend(fontsize=8, framealpha=0.95, loc='upper left')
+        ax.legend(fontsize=9, framealpha=0.95, loc='upper left')
 
-# Panel 5: Throughput retention vs N
-N_LIST    = [s[2] for s in SCALES]
-MAX_LINKS = [N * (N - 1) // 2 for N in N_LIST]
+# Panel 5: Throughput retention vs N (% of Full-Graph)
+N_LIST = [s[2] for s in SCALES]
 ax5 = fig.add_subplot(3, 3, 5)
 ax5.set_facecolor(BG)
-for sp in ['top', 'right']: ax5.spines[sp].set_visible(False)
-for cond in ['proximity', 'tsg', 'morph_v1', 'morph_v2']:
+for sp in ['top', 'right']:
+    ax5.spines[sp].set_visible(False)
+for cond in SHOW_CONDS:
     retentions = []
     for scale, _, _ in SCALES:
         fg_m = agg(scale, 'full', 1)[0][-1]
         mn_m = agg(scale, cond, 1)[0][-1]
         retentions.append(100.0 * mn_m / max(fg_m, 0.01))
-    lw = 2.5 if cond == 'morph_v2' else 1.5
-    ax5.plot(N_LIST, retentions, color=COLORS[cond], lw=lw,
+    ax5.plot(N_LIST, retentions, color=COLORS[cond], lw=LINEWIDTHS[cond],
              linestyle=LINESTYLES[cond], marker='o', ms=7,
              label=LABELS[cond], zorder=4 if cond == 'morph_v2' else 2)
 ax5.axhline(100, color='#888888', lw=0.8, linestyle=':', alpha=0.6)
@@ -155,54 +146,59 @@ ax5.set_xlabel('Number of agents (N)', fontsize=9)
 ax5.set_ylabel('Deliveries as % of Full-Graph', fontsize=9)
 ax5.set_title('Throughput Retention vs Scale', fontsize=10, fontweight='bold')
 ax5.set_xticks(N_LIST)
-ax5.legend(fontsize=8, framealpha=0.95)
+ax5.legend(fontsize=9, framealpha=0.95)
 ax5.yaxis.grid(True, alpha=0.3)
 
 # Panel 6: Link efficiency vs N
 ax6 = fig.add_subplot(3, 3, 6)
 ax6.set_facecolor(BG)
-for sp in ['top', 'right']: ax6.spines[sp].set_visible(False)
-for cond in ['proximity', 'tsg', 'morph_v1', 'morph_v2']:
-    link_pcts = [100.0 * mean_links(s[0], cond) / (s[2]*(s[2]-1)//2) for s in SCALES]
-    lw = 2.5 if cond == 'morph_v2' else 1.5
-    ax6.plot(N_LIST, link_pcts, color=COLORS[cond], lw=lw,
+for sp in ['top', 'right']:
+    ax6.spines[sp].set_visible(False)
+for cond in SHOW_CONDS:
+    link_pcts = [100.0 * mean_links(s[0], cond) / (s[2]*(s[2]-1)//2)
+                 for s in SCALES]
+    ax6.plot(N_LIST, link_pcts, color=COLORS[cond], lw=LINEWIDTHS[cond],
              linestyle=LINESTYLES[cond], marker='o', ms=7,
              label=LABELS[cond], zorder=4 if cond == 'morph_v2' else 2)
 ax6.set_xlabel('Number of agents (N)', fontsize=9)
-ax6.set_ylabel('Links used (% of max)', fontsize=9)
-ax6.set_title('Communication Efficiency vs Scale', fontsize=10, fontweight='bold')
+ax6.set_ylabel('Links used (% of max possible)', fontsize=9)
+ax6.set_title('Communication Overhead vs Scale', fontsize=10, fontweight='bold')
 ax6.set_xticks(N_LIST)
-ax6.legend(fontsize=8, framealpha=0.95)
+ax6.legend(fontsize=9, framealpha=0.95)
 ax6.yaxis.grid(True, alpha=0.3)
 
-# Panel 7-9: per-scale final delivery bar chart (bottom row)
+# Panels 7-9: per-scale bar charts (bottom row, 4 bars each)
 for pi, (scale, _, N_exp) in enumerate(SCALES):
     ax = fig.add_subplot(3, 4, 9 + pi)
     ax.set_facecolor(BG)
-    for sp in ['top', 'right']: ax.spines[sp].set_visible(False)
-    fg_m = agg(scale, 'full', 1)[0][-1]
-    bar_conds = ['no_coord', 'proximity', 'tsg', 'morph_v1', 'morph_v2', 'full']
-    vals  = [final_del(scale, c).mean() for c in bar_conds]
-    errs  = [final_del(scale, c).std()  for c in bar_conds]
-    colors = [COLORS[c] for c in bar_conds]
-    bars = ax.bar(range(len(bar_conds)), vals, color=colors, alpha=0.85,
-                  edgecolor='white', linewidth=1.0, width=0.65, zorder=3)
-    ax.errorbar(range(len(bar_conds)), vals, yerr=errs, fmt='none',
+    for sp in ['top', 'right']:
+        ax.spines[sp].set_visible(False)
+    fg_m  = agg(scale, 'full', 1)[0][-1]
+    vals  = [final_del(scale, c).mean() for c in SHOW_CONDS]
+    errs  = [final_del(scale, c).std()  for c in SHOW_CONDS]
+    cols  = [COLORS[c] for c in SHOW_CONDS]
+    bars  = ax.bar(range(len(SHOW_CONDS)), vals, color=cols, alpha=0.85,
+                   edgecolor='white', linewidth=1.0, width=0.6, zorder=3)
+    ax.errorbar(range(len(SHOW_CONDS)), vals, yerr=errs, fmt='none',
                 color='#333333', capsize=3, lw=1.2, zorder=4)
-    for i, (bar, v, e) in enumerate(zip(bars, vals, errs)):
+    for bar, v, e, col in zip(bars, vals, errs, cols):
         pct = 100.0 * v / max(fg_m, 0.01)
-        ax.text(bar.get_x() + bar.get_width() / 2, v + e + 0.2,
-                f'{pct:.0f}%', ha='center', va='bottom',
-                fontsize=7, fontweight='bold', color=colors[i])
-    ax.set_xticks(range(len(bar_conds)))
-    ax.set_xticklabels([LABELS[c].replace(' ', '\n') for c in bar_conds],
-                       fontsize=6.5, rotation=30, ha='right')
+        ax.text(bar.get_x() + bar.get_width() / 2, v + e + 0.3,
+                f'{v:.0f}\n({pct:.0f}%)', ha='center', va='bottom',
+                fontsize=7.5, fontweight='bold', color=col)
+    # Highlight MORPH bar
+    morph_idx = SHOW_CONDS.index('morph_v2')
+    bars[morph_idx].set_edgecolor(COLORS['morph_v2'])
+    bars[morph_idx].set_linewidth(2.5)
+    ax.set_xticks(range(len(SHOW_CONDS)))
+    ax.set_xticklabels([LABELS[c] for c in SHOW_CONDS],
+                       fontsize=8, rotation=25, ha='right')
     ax.set_title(f'{scale.upper()} (N={N_exp})', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Final deliveries' if pi == 0 else '', fontsize=8)
+    ax.set_ylabel('Deliveries' if pi == 0 else '', fontsize=8)
     ax.yaxis.grid(True, alpha=0.3, zorder=0)
 
-fig.suptitle('MORPH v2: Scale Study — Delivery Performance and Communication Efficiency\n'
-             f'T={T}  ·  {N_seeds} seeds  ·  Conditions: {N_seeds} seeds × 4 scales',
+fig.suptitle(f'MORPH: Scale Study — Delivery Performance and Communication Overhead\n'
+             f'T={T}  ·  {N_seeds} seeds  ·  4 scales',
              fontsize=12, fontweight='bold', y=1.01)
 fig.tight_layout()
 out1 = os.path.join(FIG_DIR, 'scale_comparison.png')
@@ -212,102 +208,88 @@ print(f"  Saved: {out1}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# FIGURE 2: Ablation bar chart
+# FIGURE 2: Grouped bar chart — all 4 conditions × all 4 scales
 # ═══════════════════════════════════════════════════════════════════════════
-print("Generating Figure 2: Ablation ...")
-fig2, axes2 = plt.subplots(1, 4, figsize=(20, 6), facecolor=BG)
-fig2.patch.set_facecolor(BG)
+print("Generating Figure 2: Scale bar chart ...")
+fig2, ax2 = plt.subplots(figsize=(12, 5), facecolor=BG)
+ax2.set_facecolor(BG)
+for sp in ['top', 'right']:
+    ax2.spines[sp].set_visible(False)
 
-ablation_conds = ['full', 'morph_v1', 'morph_v2_no_bcm',
-                  'morph_v2_no_reward', 'morph_v2_no_neuro', 'morph_v2']
+n_conds  = len(SHOW_CONDS)
+n_scales = len(SCALES)
+width    = 0.18
+x        = np.arange(n_scales)
 
-for ax, (scale, _, N_exp) in zip(axes2, SCALES):
-    ax.set_facecolor(BG)
-    for sp in ['top', 'right']: ax.spines[sp].set_visible(False)
-    fg_m = agg(scale, 'full', 1)[0][-1]
-    vals  = [final_del(scale, c).mean() for c in ablation_conds]
-    errs  = [final_del(scale, c).std()  for c in ablation_conds]
-    colors = [COLORS[c] for c in ablation_conds]
-    bars = ax.bar(range(len(ablation_conds)), vals, color=colors, alpha=0.85,
-                  edgecolor='white', linewidth=1.2, width=0.65, zorder=3)
-    ax.errorbar(range(len(ablation_conds)), vals, yerr=errs, fmt='none',
-                color='#333333', capsize=4, lw=1.5, zorder=4)
-    for i, (bar, v, e) in enumerate(zip(bars, vals, errs)):
-        pct = 100.0 * v / max(fg_m, 0.01)
-        ax.text(bar.get_x() + bar.get_width() / 2, v + e + 0.3,
-                f'{v:.1f}\n({pct:.0f}%)', ha='center', va='bottom',
-                fontsize=8, fontweight='bold', color=colors[i])
-    ax.set_xticks(range(len(ablation_conds)))
-    ax.set_xticklabels([LABELS[c] for c in ablation_conds],
-                       fontsize=8, rotation=35, ha='right')
-    ax.set_title(f'{scale.upper()}  N={N_exp}', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Final deliveries (mean ± std)' if scale == 'tiny' else '',
-                  fontsize=10)
-    ax.set_ylim(0, max(vals) * 1.40)
-    ax.yaxis.grid(True, alpha=0.3, zorder=0)
-    # Highlight MORPH v2 bar
-    bars[-1].set_edgecolor('#2166ac')
-    bars[-1].set_linewidth(2.5)
+for ci, cond in enumerate(SHOW_CONDS):
+    offset = (ci - (n_conds - 1) / 2) * (width + 0.02)
+    vals   = [final_del(s[0], cond).mean() for s in SCALES]
+    errs   = [final_del(s[0], cond).std()  for s in SCALES]
+    bars   = ax2.bar(x + offset, vals, width, color=COLORS[cond], alpha=0.85,
+                     label=LABELS[cond], edgecolor='white', linewidth=0.8, zorder=3)
+    ax2.errorbar(x + offset, vals, yerr=errs, fmt='none',
+                 color='#333333', capsize=3, lw=1.2, zorder=4)
 
-# Add mechanism labels as legend
-handles = [plt.Rectangle((0, 0), 1, 1, color=COLORS[c], alpha=0.85)
-           for c in ablation_conds]
-labels  = [LABELS[c] for c in ablation_conds]
-fig2.legend(handles, labels, loc='lower center', ncol=6,
-            fontsize=9, framealpha=0.95, bbox_to_anchor=(0.5, -0.05))
-fig2.suptitle('MORPH v2 Ablation: Contribution of Each Plasticity Mechanism\n'
-              'Each "v2 − X" removes one mechanism; Full = all-to-all upper bound',
-              fontsize=12, fontweight='bold', y=1.03)
+ax2.set_xticks(x)
+ax2.set_xticklabels([f'{s[0].upper()}\n(N={s[2]})' for s in SCALES], fontsize=11)
+ax2.set_ylabel('Final deliveries (mean ± std over 5 seeds)', fontsize=10)
+ax2.set_title(f'Delivery Performance Across Scales  (T={T})',
+              fontsize=12, fontweight='bold')
+ax2.legend(fontsize=10, framealpha=0.95, loc='upper left')
+ax2.yaxis.grid(True, alpha=0.3, zorder=0)
 fig2.tight_layout()
-out2 = os.path.join(FIG_DIR, 'ablation.png')
+out2 = os.path.join(FIG_DIR, 'scale_bars.png')
 fig2.savefig(out2, dpi=150, bbox_inches='tight', facecolor=BG)
 plt.close()
 print(f"  Saved: {out2}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# FIGURE 3: Pareto — comm cost vs throughput (all conditions, all scales)
+# FIGURE 3: Pareto — communication cost vs throughput
 # ═══════════════════════════════════════════════════════════════════════════
 print("Generating Figure 3: Pareto ...")
-fig3, axes3 = plt.subplots(1, 4, figsize=(20, 5), facecolor=BG)
+fig3, axes3 = plt.subplots(1, 4, figsize=(18, 5), facecolor=BG)
 fig3.patch.set_facecolor(BG)
-pareto_conds = ['no_coord', 'proximity', 'tsg',
-                'morph_v1', 'morph_v2', 'full']
 
 for ax, (scale, _, N_exp) in zip(axes3, SCALES):
     ax.set_facecolor(BG)
-    for sp in ['top', 'right']: ax.spines[sp].set_visible(False)
+    for sp in ['top', 'right']:
+        ax.spines[sp].set_visible(False)
     ml   = N_exp * (N_exp - 1) // 2
     fg_m = agg(scale, 'full', 1)[0][-1]
-    for cond in pareto_conds:
-        x = mean_links(scale, cond) / ml
-        y = final_del(scale, cond).mean() / max(fg_m, 0.01)
-        ms = 160 if cond == 'morph_v2' else 90
-        ax.scatter(x, y, c=COLORS[cond], s=ms, zorder=4,
-                   edgecolors='white', linewidths=1.5)
-        offset = (0.01, 0.01)
-        if cond == 'no_coord':   offset = (-0.06, -0.05)
-        elif cond == 'full':     offset = (0.01, -0.05)
-        elif cond == 'morph_v1': offset = (0.01, -0.05)
-        ax.annotate(LABELS[cond], (x, y),
-                    xytext=(x + offset[0], y + offset[1]),
-                    fontsize=8, color=COLORS[cond], fontweight='bold')
+
+    for cond in SHOW_CONDS:
+        x_val = mean_links(scale, cond) / ml
+        y_val = final_del(scale, cond).mean() / max(fg_m, 0.01)
+        ms    = 200 if cond == 'morph_v2' else 100
+        ax.scatter(x_val, y_val, c=COLORS[cond], s=ms, zorder=4,
+                   edgecolors='white', linewidths=1.5, label=LABELS[cond])
+        # Label offsets per condition
+        dx, dy = 0.01, 0.02
+        if cond == 'full':      dx, dy = 0.01, -0.06
+        elif cond == 'tsg':     dx, dy = 0.01, -0.06
+        ax.annotate(LABELS[cond], (x_val, y_val),
+                    xytext=(x_val + dx, y_val + dy),
+                    fontsize=9, color=COLORS[cond], fontweight='bold')
+
+    # Ideal region shading
+    ax.fill_between([0, 0.35], [0.9, 0.9], [1.25, 1.25],
+                    alpha=0.06, color='#2166ac')
+    if ax is axes3[0]:
+        ax.text(0.02, 1.23, 'ideal\n(high throughput\nlow cost)',
+                fontsize=7.5, color='#2166ac', va='top')
+
     ax.axhline(1.0, color='#888888', lw=0.8, linestyle=':', alpha=0.5)
-    ax.set_xlabel('Comm cost (links / max)', fontsize=9)
-    ax.set_ylabel('Throughput (/ Full-Graph)' if scale == 'tiny' else '', fontsize=9)
+    ax.set_xlabel('Comm cost (links / max possible)', fontsize=9)
+    ax.set_ylabel('Throughput (fraction of Full-Graph)' if ax is axes3[0] else '',
+                  fontsize=9)
     ax.set_title(f'{scale.upper()}  N={N_exp}', fontsize=10, fontweight='bold')
     ax.set_xlim(-0.05, 1.15)
-    ax.set_ylim(-0.05, 1.30)
+    ax.set_ylim(0.0, 1.35)
     ax.yaxis.grid(True, alpha=0.3)
     ax.xaxis.grid(True, alpha=0.3)
 
-# Ideal region annotation on first panel
-axes3[0].fill_between([0, 0.4], [0.95, 0.95], [1.30, 1.30],
-                       alpha=0.06, color='#2166ac')
-axes3[0].text(0.02, 1.27, 'ideal region\n(high throughput\nlow cost)',
-              fontsize=7, color='#2166ac', va='top')
-
-fig3.suptitle('MORPH v2: Pareto Frontier — Communication Cost vs Throughput\n'
+fig3.suptitle('MORPH: Pareto Frontier — Communication Cost vs Throughput\n'
               'Upper-left = better (high throughput, low communication overhead)',
               fontsize=12, fontweight='bold', y=1.03)
 fig3.tight_layout()
