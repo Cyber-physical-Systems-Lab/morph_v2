@@ -44,7 +44,7 @@ from collections import OrderedDict
 
 # ── Experiment config ────────────────────────────────────────────────────────
 SEEDS   = [42, 7, 123, 999, 2024]
-T_SCALE = 400
+T_SCALE = 800
 W_FLOOR = 0.25
 
 SCALES = [

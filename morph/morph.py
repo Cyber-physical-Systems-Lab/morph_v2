@@ -176,21 +176,37 @@ class MORPH:
         theta_form_adj = self.theta_form - self.neuromod_explore * max(-eta, 0.0)
         theta_form_adj = max(theta_form_adj, self.tf_end * 0.8)  # floor
 
-        # ── 2. BCM-modulated synaptic decay ───────────────────────────────
-        # ratio_ij = W_ij / theta_ij: >1 → over-potentiated → accelerate decay
+        # ── 2. Update BCM sliding threshold (BEFORE decay) ────────────────
+        # Track W history first so theta_bcm reflects the current baseline,
+        # not a lagged version that always trails a neuromod-boosted W.
+        # Only update on existing links; zero out when link is absent.
+        self.theta_bcm = (self.bcm_tau * self.theta_bcm
+                          + (1.0 - self.bcm_tau) * self.W)
+        np.fill_diagonal(self.theta_bcm, 0.0)
+
+        # ── 3. BCM-modulated synaptic decay ───────────────────────────────
+        # Fix: only penalise *mature* links (age > grace).  Newly formed links
+        # have theta_bcm ≈ 0, which makes ratio → ∞ and kills them in the first
+        # 20 steps — the opposite of the intended BCM behaviour.
+        mature = (self.link_age > self.grace).astype(float)   # 0 for young links
         ratio = self.W / (self.theta_bcm + 1e-9)
-        # Extra decay for links above their own history; zero below
-        extra_decay = self.bcm_gain * np.clip(ratio - 1.0, 0.0, 3.0) * (1.0 - self.decay)
+        extra_decay = (self.bcm_gain
+                       * np.clip(ratio - 1.0, 0.0, 3.0)
+                       * (1.0 - self.decay)
+                       * mature)
         effective_retention = np.clip(self.decay - extra_decay, 0.5, 1.0)
         self.W = self.W * effective_retention
 
-        # ── 3. Hebbian synaptic potentiation ─────────────────────────────
+        # ── 4. Hebbian synaptic potentiation ─────────────────────────────
         self.W += effective_alpha * jaccard * cov * self.A
 
-        # ── 4. Reward-modulated plasticity (delivery burst) ──────────────
-        # jac_last captures which links were active when the delivery was earned
+        # ── 5. Reward-modulated plasticity (delivery burst) ──────────────
+        # Fix: only credit links with meaningful co-assignment (jac_last > 0.25).
+        # Without threshold, every delivery strengthens ALL active links equally,
+        # making the reward signal broader and stronger than Hebbian — adding noise.
         if delivery > 0:
-            self.W += self.reward_alpha * delivery * self.jac_last * self.A
+            credit = np.where(self.jac_last > 0.25, self.jac_last, 0.0)
+            self.W += self.reward_alpha * delivery * credit * self.A
 
         # Store jaccard for next step's reward attribution
         self.jac_last = jaccard.copy()
@@ -199,12 +215,7 @@ class MORPH:
         np.clip(self.W, 0.0, 1.0, out=self.W)
         np.fill_diagonal(self.W, 0.0)
 
-        # ── 5. Update BCM sliding threshold ───────────────────────────────
-        self.theta_bcm = (self.bcm_tau * self.theta_bcm
-                          + (1.0 - self.bcm_tau) * self.W)
-        np.fill_diagonal(self.theta_bcm, 0.0)
-
-        # ── 6. Homeostatic plasticity ─────────────────────────────────────
+        # ── 6. Homeostatic plasticity ──────────────────────────────────────
         deg = self.A.sum(axis=1)
         self.H += self.beta * (self.target_deg - deg) / (self.N - 1)
         np.clip(self.H, 0.0, 1.0, out=self.H)
