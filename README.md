@@ -250,11 +250,11 @@ communication-efficient than Full-Graph (Pareto analysis).
 ## Citation
 
 ```bibtex
-@inproceedings{morph2025,
+@inproceedings{morph2026,
   title     = {MORPH: Multi-agent Online Rewiring through Plasticity-guided Hierarchy},
-  author    = {[Authors]},
+  author    = {Didem Gurdur Broo},
   booktitle = {[Venue]},
-  year      = {2025}
+  year      = {2026}
 }
 ```
 
