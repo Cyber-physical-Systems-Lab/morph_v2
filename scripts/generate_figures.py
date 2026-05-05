@@ -23,6 +23,7 @@ import sys, os, pickle, warnings
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from scipy.ndimage import uniform_filter1d
 warnings.filterwarnings('ignore')
 
@@ -56,6 +57,12 @@ LABELS = {
     'tsg':       'TSG',
     'morph_v2':  'MORPH',
     'full':      'Full-Graph',
+}
+SHORT_LABELS = {
+    'proximity': 'Prox.',
+    'tsg':       'TSG',
+    'morph_v2':  'MORPH',
+    'full':      'Full',
 }
 LINESTYLES = {
     'proximity': '--',
@@ -118,13 +125,13 @@ for pi, (scale, env_id, N_exp) in enumerate(SCALES):
     ax.set_title(f'{scale.upper()}  N={N_exp}\n'
                  f'MORPH {v2_m:.0f}  Proximity {pr_m:.0f}  '
                  f'({100*v2_m/max(pr_m,0.01):.0f}% of Proximity)',
-                 fontsize=9, fontweight='bold', loc='left')
-    ax.set_xlabel('Time step', fontsize=9)
-    ax.set_ylabel('Cumulative deliveries', fontsize=9)
+                 fontsize=8, fontweight='bold', loc='left', pad=2)
+    ax.set_xlabel('Time step' if pi == 3 else '', fontsize=8, labelpad=1)
+    ax.set_ylabel('Cumulative deliveries' if pi in (0, 3) else '',
+                  fontsize=8, labelpad=1)
     ax.set_xlim(0, T)
+    ax.tick_params(axis='both', labelsize=8, pad=1)
     ax.yaxis.grid(True, alpha=0.3)
-    if pi == 0:
-        ax.legend(fontsize=9, framealpha=0.95, loc='upper left')
 
 # Panel 5: Throughput retention vs N (% of Full-Graph)
 N_LIST = [s[2] for s in SCALES]
@@ -142,11 +149,12 @@ for cond in SHOW_CONDS:
              linestyle=LINESTYLES[cond], marker='o', ms=7,
              label=LABELS[cond], zorder=4 if cond == 'morph_v2' else 2)
 ax5.axhline(100, color='#888888', lw=0.8, linestyle=':', alpha=0.6)
-ax5.set_xlabel('Number of agents (N)', fontsize=9)
-ax5.set_ylabel('Deliveries as % of Full-Graph', fontsize=9)
-ax5.set_title('Throughput Retention vs Scale', fontsize=10, fontweight='bold')
+ax5.set_xlabel('Number of agents (N)', fontsize=8, labelpad=1)
+ax5.set_ylabel('Deliveries as % of Full-Graph', fontsize=8, labelpad=1)
+ax5.set_title('Throughput Retention vs Scale', fontsize=9, fontweight='bold',
+              pad=2)
 ax5.set_xticks(N_LIST)
-ax5.legend(fontsize=9, framealpha=0.95)
+ax5.tick_params(axis='both', labelsize=8, pad=1)
 ax5.yaxis.grid(True, alpha=0.3)
 
 # Panel 6: Link efficiency vs N
@@ -160,11 +168,12 @@ for cond in SHOW_CONDS:
     ax6.plot(N_LIST, link_pcts, color=COLORS[cond], lw=LINEWIDTHS[cond],
              linestyle=LINESTYLES[cond], marker='o', ms=7,
              label=LABELS[cond], zorder=4 if cond == 'morph_v2' else 2)
-ax6.set_xlabel('Number of agents (N)', fontsize=9)
-ax6.set_ylabel('Links used (% of max possible)', fontsize=9)
-ax6.set_title('Communication Overhead vs Scale', fontsize=10, fontweight='bold')
+ax6.set_xlabel('Number of agents (N)', fontsize=8, labelpad=1)
+ax6.set_ylabel('Links used (% of max possible)', fontsize=8, labelpad=1)
+ax6.set_title('Communication Overhead vs Scale', fontsize=9, fontweight='bold',
+              pad=2)
 ax6.set_xticks(N_LIST)
-ax6.legend(fontsize=9, framealpha=0.95)
+ax6.tick_params(axis='both', labelsize=8, pad=1)
 ax6.yaxis.grid(True, alpha=0.3)
 
 # Panels 7-9: per-scale bar charts (bottom row, 4 bars each)
@@ -185,22 +194,34 @@ for pi, (scale, _, N_exp) in enumerate(SCALES):
         pct = 100.0 * v / max(fg_m, 0.01)
         ax.text(bar.get_x() + bar.get_width() / 2, v + e + 0.3,
                 f'{v:.0f}\n({pct:.0f}%)', ha='center', va='bottom',
-                fontsize=7.5, fontweight='bold', color=col)
+                fontsize=7, fontweight='bold', color=col)
     # Highlight MORPH bar
     morph_idx = SHOW_CONDS.index('morph_v2')
     bars[morph_idx].set_edgecolor(COLORS['morph_v2'])
     bars[morph_idx].set_linewidth(2.5)
     ax.set_xticks(range(len(SHOW_CONDS)))
-    ax.set_xticklabels([LABELS[c] for c in SHOW_CONDS],
-                       fontsize=8, rotation=25, ha='right')
-    ax.set_title(f'{scale.upper()} (N={N_exp})', fontsize=9, fontweight='bold')
-    ax.set_ylabel('Deliveries' if pi == 0 else '', fontsize=8)
+    ax.set_xticklabels([SHORT_LABELS[c] for c in SHOW_CONDS],
+                       fontsize=7.5, rotation=20, ha='right')
+    ax.set_title(f'{scale.upper()} (N={N_exp})', fontsize=8.5,
+                 fontweight='bold', pad=2)
+    ax.set_ylabel('Deliveries' if pi == 0 else '', fontsize=8, labelpad=1)
+    ax.tick_params(axis='both', labelsize=7.5, pad=1)
     ax.yaxis.grid(True, alpha=0.3, zorder=0)
 
 fig.suptitle(f'MORPH: Scale Study — Delivery Performance and Communication Overhead\n'
              f'T={T}  ·  {N_seeds} seeds  ·  4 scales',
-             fontsize=12, fontweight='bold', y=1.01)
-fig.tight_layout()
+             fontsize=12, fontweight='bold', y=0.985)
+legend_handles = [
+    Line2D([0], [0], color=COLORS[c], lw=LINEWIDTHS[c],
+           linestyle=LINESTYLES[c], marker='o', markersize=5,
+           label=LABELS[c])
+    for c in SHOW_CONDS
+]
+fig.legend(handles=legend_handles, loc='upper center', ncol=len(SHOW_CONDS),
+           frameon=True, framealpha=0.95, bbox_to_anchor=(0.5, 0.958),
+           fontsize=10)
+fig.subplots_adjust(left=0.052, right=0.99, bottom=0.075, top=0.9,
+                    hspace=0.15, wspace=0.1)
 out1 = os.path.join(FIG_DIR, 'scale_comparison.png')
 fig.savefig(out1, dpi=150, bbox_inches='tight', facecolor=BG)
 plt.close()

@@ -43,7 +43,13 @@ from morph import MORPH
 from collections import OrderedDict
 
 # ── Experiment config ────────────────────────────────────────────────────────
-SEEDS   = [42, 7, 123, 999, 2024]
+# SEEDS   = [42, 7, 123, 999, 2024]
+SEEDS = [
+    13, 42, 87, 123, 256,
+    512, 777, 1024, 1337, 2021,
+    4096, 5555, 6789, 8192, 9999,
+    12345, 22222, 31415, 42424, 65536
+]
 T_SCALE = 800
 W_FLOOR = 0.25
 
@@ -55,7 +61,7 @@ SCALES = [
 ]
 
 CONDITIONS = [
-    'no_coord',
+    # 'no_coord',
     'proximity',
     'tsg',
     'morph_v1',
