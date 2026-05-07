@@ -19,7 +19,7 @@ Usage
 -----
   python scripts/generate_figures.py
 """
-import sys, os, pickle, warnings
+import sys, os, pickle, warnings, shutil
 import numpy as np
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -31,7 +31,14 @@ ROOT    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 RES_DIR = os.path.join(ROOT, 'results')
 FIG_DIR = os.path.join(ROOT, 'figures')
+PAPER_DIR = os.path.join(ROOT, '69d60f1a562a0fdddc6a8f3a')
 os.makedirs(FIG_DIR, exist_ok=True)
+
+
+def mirror_to_paper_dir(path):
+    """Keep the LaTeX project copy in sync with regenerated figures."""
+    if os.path.isdir(PAPER_DIR):
+        shutil.copy2(path, os.path.join(PAPER_DIR, os.path.basename(path)))
 
 # ── Load ──────────────────────────────────────────────────────────────────────
 with open(os.path.join(RES_DIR, 'experiment_results.pkl'), 'rb') as f:
@@ -224,6 +231,7 @@ fig.subplots_adjust(left=0.052, right=0.99, bottom=0.075, top=0.9,
                     hspace=0.15, wspace=0.1)
 out1 = os.path.join(FIG_DIR, 'scale_comparison.png')
 fig.savefig(out1, dpi=150, bbox_inches='tight', facecolor=BG)
+mirror_to_paper_dir(out1)
 plt.close()
 print(f"  Saved: {out1}")
 
@@ -261,6 +269,7 @@ ax2.yaxis.grid(True, alpha=0.3, zorder=0)
 fig2.tight_layout()
 out2 = os.path.join(FIG_DIR, 'scale_bars.png')
 fig2.savefig(out2, dpi=150, bbox_inches='tight', facecolor=BG)
+mirror_to_paper_dir(out2)
 plt.close()
 print(f"  Saved: {out2}")
 
@@ -316,6 +325,7 @@ fig3.suptitle('MORPH: Pareto Frontier — Communication Cost vs Throughput\n'
 fig3.tight_layout()
 out3 = os.path.join(FIG_DIR, 'pareto.png')
 fig3.savefig(out3, dpi=150, bbox_inches='tight', facecolor=BG)
+mirror_to_paper_dir(out3)
 plt.close()
 print(f"  Saved: {out3}")
 

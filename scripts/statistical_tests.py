@@ -46,11 +46,21 @@ print(f"\n{'Scale':<8} {'Comparison':<40} {'mean_A':>7} {'mean_B':>7}"
 print("-" * 80)
 
 for scale, _, _ in SCALES:
-    # MORPH v2 vs all others
-    for other in ['morph_v1', 'proximity', 'tsg',
+    # MORPH v2 vs all others; skip conditions absent from results
+    candidates = ['morph_v1', 'proximity', 'tsg',
                   'morph_v2_no_bcm', 'morph_v2_no_reward', 'morph_v2_no_neuro',
-                  'full', 'no_coord']:
-        r = welch(scale, 'morph_v2', other)
+                  'full', 'no_coord']
+    available = set(all_results.get(scale, {}).keys())
+    for other in candidates:
+        if other not in available:
+            # Skip comparisons for conditions not present in this scale's results
+            continue
+        try:
+            r = welch(scale, 'morph_v2', other)
+        except Exception as e:
+            # Don't fail the whole script for one bad comparison
+            print(f"  Skipping comparison morph_v2 vs {other} on {scale}: {e}")
+            continue
         rows.append(r)
         comp = f"morph_v2 vs {other}"
         sig  = '★' if r['significant'] == 'YES' else ''

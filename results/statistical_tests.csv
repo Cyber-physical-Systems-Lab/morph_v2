@@ -6,7 +6,6 @@ tiny,morph_v2,morph_v2_no_bcm,55.1500,55.8000,-0.6500,-0.2720,0.7871,NO
 tiny,morph_v2,morph_v2_no_reward,55.1500,53.7000,1.4500,0.5272,0.6012,NO
 tiny,morph_v2,morph_v2_no_neuro,55.1500,55.8500,-0.7000,-0.3550,0.7252,NO
 tiny,morph_v2,full,55.1500,55.4000,-0.2500,-0.0958,0.9242,NO
-tiny,morph_v2,no_coord,55.1500,0.0000,55.1500,31.3691,0.0000,YES
 small,morph_v2,morph_v1,66.5500,64.2500,2.3000,1.3502,0.1862,NO
 small,morph_v2,proximity,66.5500,69.3500,-2.8000,-2.3327,0.0253,YES
 small,morph_v2,tsg,66.5500,64.9000,1.6500,1.3189,0.1952,NO
@@ -14,7 +13,6 @@ small,morph_v2,morph_v2_no_bcm,66.5500,62.5000,4.0500,2.1100,0.0434,YES
 small,morph_v2,morph_v2_no_reward,66.5500,65.4500,1.1000,0.7862,0.4367,NO
 small,morph_v2,morph_v2_no_neuro,66.5500,65.5000,1.0500,0.6734,0.5051,NO
 small,morph_v2,full,66.5500,64.6000,1.9500,1.1260,0.2685,NO
-small,morph_v2,no_coord,66.5500,0.0000,66.5500,71.3114,0.0000,YES
 medium,morph_v2,morph_v1,85.3000,88.1500,-2.8500,-2.0694,0.0470,YES
 medium,morph_v2,proximity,85.3000,90.5500,-5.2500,-2.4359,0.0204,YES
 medium,morph_v2,tsg,85.3000,86.2500,-0.9500,-0.5569,0.5809,NO
@@ -22,7 +20,6 @@ medium,morph_v2,morph_v2_no_bcm,85.3000,86.6000,-1.3000,-0.7188,0.4768,NO
 medium,morph_v2,morph_v2_no_reward,85.3000,85.7000,-0.4000,-0.2381,0.8131,NO
 medium,morph_v2,morph_v2_no_neuro,85.3000,87.6000,-2.3000,-1.5369,0.1332,NO
 medium,morph_v2,full,85.3000,84.2000,1.1000,0.5345,0.5965,NO
-medium,morph_v2,no_coord,85.3000,0.0000,85.3000,71.8088,0.0000,YES
 large,morph_v2,morph_v1,102.6500,100.5000,2.1500,1.9466,0.0609,NO
 large,morph_v2,proximity,102.6500,107.0000,-4.3500,-4.4658,0.0001,YES
 large,morph_v2,tsg,102.6500,100.3500,2.3000,2.3212,0.0265,YES
@@ -30,4 +27,3 @@ large,morph_v2,morph_v2_no_bcm,102.6500,99.4500,3.2000,1.9385,0.0645,NO
 large,morph_v2,morph_v2_no_reward,102.6500,100.0500,2.6000,2.3391,0.0261,YES
 large,morph_v2,morph_v2_no_neuro,102.6500,99.1500,3.5000,2.3011,0.0301,YES
 large,morph_v2,full,102.6500,99.1500,3.5000,3.7383,0.0007,YES
-large,morph_v2,no_coord,102.6500,0.0000,102.6500,185.3509,0.0000,YES

@@ -8,11 +8,12 @@ should provide).
 
 Protocol
 --------
-    Phase 1 (1–200):    LEFT
-    Phase 2 (201–400):  RIGHT       ← first shift
-    Phase 3 (401–600):  LEFT        ← first return; tests memory once
-    Phase 4 (601–800):  RIGHT       ← tests pruning/relearn
-    Phase 5 (801–1000): LEFT        ← tests memory compounding (key cell)
+    Phase 1 (1–400):    LEFT
+    Phase 2 (401–800):  RIGHT       ← first shift
+    Phase 3 (801–1200): LEFT        ← first return; tests memory once
+    Phase 4 (1201–1600): RIGHT       ← tests pruning/relearn
+    Phase 5 (1601–2000): LEFT        ← tests memory compounding (key cell)
+    Phase 6 (2001–2400): RIGHT       ← tests pruning/relearn again
 
 Same env, same agents, same seed throughout — only the preferred zone changes.
 
@@ -60,20 +61,32 @@ from experiments.shift_experiment import (
     compute_proximity_matrix,
     ENV_ID, W_FLOOR, PROX_R,
     SEEDS as SHIFT_SEEDS,
-    _V2_KW,
+    # _V2_KW,
     COLORS, LABELS,
 )
 
+_V2_KW = dict(
+    alpha=0.20968647794935405, beta=0.027724243515151663, decay=0.9705207750820916,
+    theta_form_start=0.8733817583708194, theta_form_end=0.38632206314732803, theta_form_anneal=100,
+    theta_prune=0.002460673290093817, target_deg_frac=0.30243297989234874,
+    grace_steps=20, k_slow=2, max_new=5,
+    bcm_tau=0.9222496815870475, bcm_gain=0.5,
+    reward_alpha=0.18368593964285584,
+    neuromod_gain=0.4, neuromod_explore=0.10,
+    neuromod_ema=0.03, expected_delivery_rate=0.14,
+    pred_boost=0.4,
+)
+
 # ── Config ────────────────────────────────────────────────────────────────────
-T_PHASE       = 200
-ZONE_SCHEDULE = ['L', 'R', 'L', 'R', 'L']      # 5 phases
+T_PHASE       = 400
+ZONE_SCHEDULE = ['L', 'R', 'L', 'R', 'L', 'R']  # 6 phases
 T_TOTAL       = T_PHASE * len(ZONE_SCHEDULE)
 WINDOW        = 50
 
 CONDITIONS = ['proximity', 'tsg', 'morph_v2', 'morph_v2_reset']
 
 # Phases (1-indexed in docs, 0-indexed internally) where a regime change occurs.
-SHIFT_PHASE_INDICES = list(range(1, len(ZONE_SCHEDULE)))   # [1,2,3,4]
+SHIFT_PHASE_INDICES = list(range(1, len(ZONE_SCHEDULE)))   # [1,2,3,4,5 for 6 phases]
 
 
 # ── Episode runner ────────────────────────────────────────────────────────────
@@ -460,7 +473,7 @@ def make_figure(results, agg, t_phase=T_PHASE, zone_schedule=ZONE_SCHEDULE,
 
     ax_curve.set_xlabel('Step')
     ax_curve.set_ylabel(f'Deliveries / step  (rolling {window}-step mean)')
-    ax_curve.set_title('Recovery curves — cyclical L→R→L→R→L (medium scale)',
+    ax_curve.set_title('Recovery curves — cyclical L→R→L→R→L (Large scale)',
                        fontsize=12, fontweight='bold')
     ax_curve.legend(fontsize=9, loc='lower right')
     ax_curve.set_xlim(0, T_total)
